@@ -21,31 +21,35 @@ Or install it yourself as:
 ## Usage
 
 ```ruby
-# Register custom handlers
-#
+# Register a handler.
+# Anything that responds to `.call(object, method)` will work.
+LOGGER = Logger.new
 Dont.register_handler(:logger, ->(object, method) {
   class_name = object.class.name
-  logger.warn("Don't use `#{class_name}##{method}`. It's deprecated.")
+  LOGGER.warn("Don't use `#{class_name}##{method}`. It's deprecated.")
 })
+
 class Shouter
   include Dont.new(:logger)
 
+  # New method
   def shout(msg)
     msg.upcase
   end
 
+  # Old method
   def scream(msg)
     shout(msg)
   end
   dont_use :scream
 end
 
-# This will log "Don't use `Shouter#scream`. It's deprecated.", and then
-# execute the method.
+# Logs "Don't use `Shouter#scream`. It's deprecated.", 
+# and then executes the method.
 Shouter.new.scream("hello")
 # => HELLO
 
-# There's also a builtin "exception" handler, which is handy for in development
+# There's a builtin "exception" handler, which is handy for in development
 class Person
   include Dont.new(:exception)
 
@@ -55,7 +59,7 @@ class Person
   dont_use :firstname
 end
 
-Person.new.firstname # => Dont::DeprecationError
+Person.new.firstname # => fails with `Dont::DeprecationError`
 ```
 
 ## Development
