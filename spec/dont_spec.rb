@@ -1,7 +1,17 @@
 require "spec_helper"
 require "logger"
+require "sqlite3"
+require "active_record"
 
 describe Dont do
+
+  before :all do
+    @method_calls = []
+    Dont.register_handler(:method_logger, -> (object, method) {
+      @method_calls << "#{object.class.name}##{method}"
+    })
+  end
+
   it "has a version number" do
     expect(Dont::VERSION).not_to be nil
   end
@@ -61,6 +71,52 @@ describe Dont do
       expect(logger).to receive(:warn).with("Don't use 'shout'.")
       result = klass.new.shout("Welcome!")
       expect(result).to eq("WELCOME!")
+    end
+  end
+
+  describe "ActiveRecord::Base" do
+    before(:all) do
+      # don't output all the migration activity
+      ActiveRecord::Migration.verbose = false
+
+      # switch the active database connection to an SQLite, in-memory database
+      ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
+
+      # execute the migration, creating a table (dirty_items) and columns (body, email, name)
+      ActiveRecord::Schema.define(version: 1) do
+        create_table :items do |t|
+          t.text :name
+          t.boolean :usable
+        end
+      end
+
+      class Item < ActiveRecord::Base
+        include Dont.new(:method_logger)
+        dont_use :usable
+        dont_use :usable?
+        dont_use :usable=
+      end
+    end
+
+    it "still executes the original method correctly" do
+      Item.create!(name: "usable", usable: true)
+      expect(@method_calls).to eq(["Item#usable="])
+      item = Item.last
+      expect(item.usable).to eq(true)
+      expect(item.usable?).to eq(true)
+      expect(@method_calls).to eq(["Item#usable=", "Item#usable", "Item#usable?"])
+
+      item.usable = false
+      item.save!
+      item.reload
+      expect(item.usable).to eq(false)
+      expect(item.usable?).to eq(false)
+
+      item.usable = nil
+      item.save!
+      item.reload
+      expect(item.usable).to eq(nil)
+      expect(item.usable?).to eq(nil)
     end
   end
 end

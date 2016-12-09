@@ -77,9 +77,9 @@ class Dont < Module
         handler.call(self, method)
         if is_ar_attribute
           if method =~ /=$/
-            self[method] = args.first
+            self[method.to_s.gsub(/=$/, '')] = args.first
           else
-            self[method]
+            self[method.to_s.gsub(/\?$/, '')]
           end
         else
           old_method.bind(self).call(*args)
