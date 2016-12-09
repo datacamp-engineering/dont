@@ -45,7 +45,6 @@ class Dont < Module
   Error = Class.new(StandardError)
   DeprecationError = Class.new(Error)
   MissingHandlerError = Class.new(Error)
-  WrongArityError = Class.new(Error)
 
   def initialize(key)
     handler = Dont.fetch_handler(key)
