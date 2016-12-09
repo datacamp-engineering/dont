@@ -62,10 +62,28 @@ class Dont < Module
   def initialize(key)
     handler = Dont.fetch_handler(key)
     @implementation = ->(method) {
-      old_method = instance_method(method)
+      # The moment `dont_use` is called in ActiveRecord is before AR defines
+      # the attributes in the model. So you get an error when calling
+      # instance_method with the regular implementation.
+      #
+      # This hack determines if it's an ActiveRecord attribute or not, and
+      # adapts the code.
+      is_ar_attribute = defined?(ActiveRecord::Base) &&
+        ancestors.include?(ActiveRecord::Base) &&
+        !method_defined?(method)
+
+      old_method = instance_method(method) unless is_ar_attribute
       define_method(method) do |*args|
         handler.call(self, method)
-        old_method.bind(self).call(*args)
+        if is_ar_attribute
+          if method =~ /=$/
+            self[method] = args.first
+          else
+            self[method]
+          end
+        else
+          old_method.bind(self).call(*args)
+        end
       end
     }
   end
