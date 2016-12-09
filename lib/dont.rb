@@ -82,10 +82,6 @@ class Dont < Module
   end
 
   class << self
-    def handlers
-      @handlers ||= Dry::Container.new
-    end
-
     def register_handler(key, callable)
       handlers.register(key, callable)
     end
@@ -94,6 +90,12 @@ class Dont < Module
       self.handlers.resolve(key)
     rescue Dry::Container::Error => e
       fail MissingHandlerError, e.message
+    end
+
+    protected
+
+    def handlers
+      @handlers ||= Dry::Container.new
     end
   end
 
