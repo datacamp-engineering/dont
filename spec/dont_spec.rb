@@ -84,6 +84,11 @@ describe Dont do
         dont_use :usable
         dont_use :usable?
         dont_use :usable=
+
+        def old_name
+          name
+        end
+        dont_use :old_name
       end
 
       ActiveRecord::Migration.verbose = false
@@ -100,7 +105,7 @@ describe Dont do
     end
 
     it "still executes the original method correctly" do
-      Item.create!(name: "usable", usable: true)
+      Item.create!(name: "Usable item", usable: true)
       expect(@method_calls).to eq(["Item#usable=", "Item#usable"])
       @method_calls.clear
       item = Item.last
@@ -119,6 +124,32 @@ describe Dont do
       item.reload
       expect(item.usable).to eq(nil)
       expect(item.usable?).to eq(nil)
+
+      @method_calls.clear
+      expect(item.old_name).to eq("Usable item")
+      expect(@method_calls).to eq(["Item#old_name"])
+    end
+  end
+
+  describe Dont::Deprecation do
+    it "generates a deprecation message" do
+      [
+        [
+          Hash.new, "to_h", :to_h_v2,
+          "DEPRECATED: Don't use Hash#to_h. It's deprecated in favor of to_h_v2."
+        ],
+        [
+          Array.new, "old_method", nil,
+          "DEPRECATED: Don't use Array#old_method. It's deprecated."
+        ],
+        [
+          Array.new, "old_method", "",
+          "DEPRECATED: Don't use Array#old_method. It's deprecated."
+        ],
+      ].each do |(obj, old, use, msg)|
+        depr = described_class.new(subject: obj, old_method: old, new_method: use)
+        expect(depr.message).to eq(msg)
+      end
     end
   end
 end

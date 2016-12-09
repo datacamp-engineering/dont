@@ -69,10 +69,11 @@ class Dont < Module
         )
         handler.call(deprecation)
         if is_ar_attribute
-          if old_method =~ /=$/
-            self[old_method.to_s.gsub(/=$/, '')] = args.first
+          if old_method =~ /=\z/
+            attr = old_method.to_s.sub(/=\z/, '')
+            public_send(:[]=, attr, *args)
           else
-            self[old_method.to_s.gsub(/\?$/, '')]
+            self[old_method.to_s.sub(/\?\z/, '')]
           end
         else
           original.bind(self).call(*args)
