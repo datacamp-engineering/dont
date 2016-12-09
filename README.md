@@ -1,5 +1,7 @@
 # Dont
 
+[![Build Status](https://travis-ci.org/datacamp/dont.svg?branch=master)](https://travis-ci.org/datacamp/dont) [![Gem Version](https://badge.fury.io/rb/dont.svg)](https://badge.fury.io/rb/dont) 
+
 Easily deprecate methods.
 
 ## Installation
