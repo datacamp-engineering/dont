@@ -47,18 +47,6 @@ class Dont < Module
   MissingHandlerError = Class.new(Error)
   WrongArityError = Class.new(Error)
 
-  HANDLERS = {
-    exception: -> (object, method) {
-      class_name = object.class.name
-      fail DeprecationError, "Don't use `#{class_name}##{method}`. It's deprecated."
-    },
-    airbrake: -> (object, method) {
-      class_name = object.class.name
-      err = DeprecationError.new("Don't use `#{class_name}##{method}`. It's deprecated.")
-      Airbrake.notify(err)
-    },
-  }
-
   def initialize(key)
     handler = Dont.fetch_handler(key)
     @implementation = ->(method) {
