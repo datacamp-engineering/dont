@@ -98,11 +98,12 @@ describe Dont do
 
     it "still executes the original method correctly" do
       Item.create!(name: "usable", usable: true)
-      expect(@method_calls).to eq(["Item#usable="])
+      expect(@method_calls).to eq(["Item#usable=", "Item#usable"])
+      @method_calls.clear
       item = Item.last
       expect(item.usable).to eq(true)
       expect(item.usable?).to eq(true)
-      expect(@method_calls).to eq(["Item#usable=", "Item#usable", "Item#usable?"])
+      expect(@method_calls).to eq(["Item#usable", "Item#usable?"])
 
       item.usable = false
       item.save!
