@@ -7,8 +7,8 @@ describe Dont do
 
   before :all do
     @method_calls = []
-    Dont.register_handler(:method_logger, -> (object, method) {
-      @method_calls << "#{object.class.name}##{method}"
+    Dont.register_handler(:method_logger, -> (depr) {
+      @method_calls << "#{depr.subject.class.name}##{depr.old_method}"
     })
   end
 
@@ -24,7 +24,7 @@ describe Dont do
 
     def drive_manually
     end
-    dont_use :drive_manually
+    dont_use :drive_manually, use: :drive_autopilot
   end
 
 
@@ -46,7 +46,7 @@ describe Dont do
           Car.new.drive_manually
         }.to raise_error(
           Dont::DeprecationError,
-          "Don't use `Car#drive_manually`. It's deprecated."
+          "DEPRECATED: Don't use Car#drive_manually. It's deprecated in favor of drive_autopilot."
         )
       end
     end
@@ -55,8 +55,8 @@ describe Dont do
   describe ".register_handler" do
     it "can be used for a custom handler" do
       logger = instance_double(Logger)
-      Dont.register_handler(:log_deprecated_call, -> (object, method) {
-        logger.warn("Don't use '#{method.to_s}'.")
+      Dont.register_handler(:log_deprecated_call, -> (depr) {
+        logger.warn(depr.message)
       })
 
       klass = Class.new do
@@ -68,7 +68,7 @@ describe Dont do
         dont_use :shout
       end
 
-      expect(logger).to receive(:warn).with("Don't use 'shout'.")
+      expect(logger).to receive(:warn).with("DEPRECATED: Don't use #shout. It's deprecated.")
       result = klass.new.shout("Welcome!")
       expect(result).to eq("WELCOME!")
     end
@@ -76,6 +76,16 @@ describe Dont do
 
   describe "ActiveRecord::Base" do
     before(:all) do
+      # Define model before schema is defined. The attributes don't exist at
+      # this point, but dont_use should still work
+      #
+      class Item < ActiveRecord::Base
+        include Dont.new(:method_logger)
+        dont_use :usable
+        dont_use :usable?
+        dont_use :usable=
+      end
+
       ActiveRecord::Migration.verbose = false
       ActiveRecord::Base.establish_connection(
         adapter: "sqlite3",
@@ -86,13 +96,6 @@ describe Dont do
           t.text :name
           t.boolean :usable
         end
-      end
-
-      class Item < ActiveRecord::Base
-        include Dont.new(:method_logger)
-        dont_use :usable
-        dont_use :usable?
-        dont_use :usable=
       end
     end
 

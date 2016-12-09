@@ -23,45 +23,40 @@ Or install it yourself as:
 ## Usage
 
 ```ruby
-# Register a handler.
-# Anything that responds to `.call(object, method)` will work.
+# Register a deprecation handler.
+# Anything that responds to `.call(deprecation)` will work.
 LOGGER = Logger.new
-Dont.register_handler(:logger, ->(object, method) {
-  class_name = object.class.name
-  LOGGER.warn("Don't use `#{class_name}##{method}`. It's deprecated.")
-})
-
+Dont.register_handler(:logger, ->(deprecation) { LOGGER.warn(deprecation.message) })
 class Shouter
   include Dont.new(:logger)
 
-  # New method
   def shout(msg)
     msg.upcase
   end
 
-  # Old method
   def scream(msg)
     shout(msg)
   end
-  dont_use :scream
+  dont_use :scream, use: :shout
 end
 
-# Logs "Don't use `Shouter#scream`. It's deprecated.", 
-# and then executes the method.
+# Logs "DEPRECATED: Don't use Shouter#scream. It's deprecated in favor of
+# shout.", before executing the method.
 Shouter.new.scream("hello")
-# => HELLO
 
-# There's a builtin "exception" handler, which is handy for in development
+
+# The :exception deprecation handler is provided by default.
+# It raises an exception whenever the method is called, which is handy in
+# test or development mode.
 class Person
   include Dont.new(:exception)
 
   attr_accessor :firstname
   attr_accessor :first_name
 
-  dont_use :firstname
+  dont_use :firstname, use: :first_name
 end
-
-Person.new.firstname # => fails with `Dont::DeprecationError`
+Person.new.firstname # => fails with Dont::DeprecationError
 ```
 
 ## Development
