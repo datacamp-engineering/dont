@@ -76,13 +76,11 @@ describe Dont do
 
   describe "ActiveRecord::Base" do
     before(:all) do
-      # don't output all the migration activity
       ActiveRecord::Migration.verbose = false
-
-      # switch the active database connection to an SQLite, in-memory database
-      ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
-
-      # execute the migration, creating a table (dirty_items) and columns (body, email, name)
+      ActiveRecord::Base.establish_connection(
+        adapter: "sqlite3",
+        database: ":memory:"
+      )
       ActiveRecord::Schema.define(version: 1) do
         create_table :items do |t|
           t.text :name
