@@ -40,8 +40,8 @@ class Shouter
   dont_use :scream, use: :shout
 end
 
-# Logs "DEPRECATED: Don't use Shouter#scream. It's deprecated in favor of
-# shout.", before executing the method.
+# Logs "DEPRECATED: Don't use Shouter#scream. It's deprecated in favor of shout.", 
+# before executing the method.
 Shouter.new.scream("hello")
 
 
@@ -57,6 +57,30 @@ class Person
   dont_use :firstname, use: :first_name
 end
 Person.new.firstname # => fails with Dont::DeprecationError
+```
+
+## Example with Rails
+
+```ruby
+# in config/initializers/dont.rb
+Dont.register_handler(:rails_logger, ->(deprecation) { 
+  Rails.logger.warn(deprecation.message) 
+})
+DontLogger = Dont.new(:rails_logger)
+
+# in app/models/comment.rb
+class Comment < ActiveRecord::Base
+  include DontLogger # as defined in the initializer
+  
+  # We want to use `body` instead of `description` from now on
+  alias_attribute :description, :body
+  dont_use :description, use: :body
+end
+
+comment = Comment.new
+comment.description
+# => works, but with a deprecation warning: "DEPRECATED: Don't use Comment#description. It's deprecated in favor of body."
+
 ```
 
 ## Development
