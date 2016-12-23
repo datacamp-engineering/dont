@@ -23,12 +23,35 @@ Or install it yourself as:
 ## Usage
 
 ```ruby
+class Shouter
+  include Dont::WithWarn
+
+  def shout(msg)
+    msg.upcase
+  end
+
+  def scream(msg)
+    shout(msg)
+  end
+  # Indicate that we want to deprecate the scream method, and that you should
+  # use "shout" instead. The :use option can be any string or symbol.
+  dont_use :scream, use: :shout
+end
+
+# Logs "DEPRECATED: Don't use Shouter#scream. It's deprecated in favor of shout.",
+# before executing the method.
+Shouter.new.scream("hello")
+```
+
+### With a custom handler
+
+```ruby
 # Register a deprecation handler.
 # Anything that responds to `.call(deprecation)` will work.
 LOGGER = Logger.new
-Dont.register_handler(:logger, ->(deprecation) { LOGGER.warn(deprecation.message) })
+DeprecationLogger = Dont.register_handler(:logger, ->(deprecation) { LOGGER.warn(deprecation.message) })
 class Shouter
-  include Dont.new(:logger)
+  include DeprecationLogger
 
   def shout(msg)
     msg.upcase
@@ -43,13 +66,16 @@ end
 # Logs "DEPRECATED: Don't use Shouter#scream. It's deprecated in favor of shout.", 
 # before executing the method.
 Shouter.new.scream("hello")
+```
 
+### Raising exceptions in development
 
+```
 # The :exception deprecation handler is provided by default.
 # It raises an exception whenever the method is called, which is handy in
 # test or development mode.
 class Person
-  include Dont.new(:exception)
+  include Dont::WithException
 
   attr_accessor :firstname
   attr_accessor :first_name
@@ -59,7 +85,7 @@ end
 Person.new.firstname # => fails with Dont::DeprecationError
 ```
 
-## Example with Rails
+### Using the Rails logger
 
 ```ruby
 # in config/initializers/dont.rb
