@@ -16,18 +16,6 @@ describe Dont do
     expect(Dont::VERSION).not_to be nil
   end
 
-  Car = Class.new do
-    include Dont.new(:exception)
-
-    def drive_autopilot
-    end
-
-    def drive_manually
-    end
-    dont_use :drive_manually, use: :drive_autopilot
-  end
-
-
   describe ".new(...)" do
     it "fails when used with an unknown handler" do
       expect {
@@ -36,19 +24,6 @@ describe Dont do
         Dont::MissingHandlerError,
         "Nothing registered with the key :deal_with_it"
       )
-    end
-  end
-
-  describe "deprecation handling" do
-    context "with :exception" do
-      it "triggers an exception if the old method is used" do
-        expect {
-          Car.new.drive_manually
-        }.to raise_error(
-          Dont::DeprecationError,
-          "DEPRECATED: Don't use Car#drive_manually. It's deprecated in favor of drive_autopilot."
-        )
-      end
     end
   end
 
@@ -63,14 +38,27 @@ describe Dont do
         include Dont.new(:log_deprecated_call)
 
         def shout(msg)
-          msg.upcase
+          scream(msg)
         end
         dont_use :shout
+
+        def yell(msg)
+          scream(msg)
+        end
+        dont_use :yell, use: :scream
+
+        def scream(msg)
+          msg.upcase
+        end
       end
 
-      expect(logger).to receive(:warn).with("DEPRECATED: Don't use #shout. It's deprecated.")
-      result = klass.new.shout("Welcome!")
-      expect(result).to eq("WELCOME!")
+      expect(logger).to receive(:warn)
+        .with("DEPRECATED: Don't use #shout. It's deprecated.")
+      expect(logger).to receive(:warn)
+        .with("DEPRECATED: Don't use #yell. It's deprecated in favor of scream.")
+      shouter = klass.new
+      expect(shouter.shout("Welcome!")).to eq("WELCOME!")
+      expect(shouter.yell("Welcome!")).to eq("WELCOME!")
     end
   end
 

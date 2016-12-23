@@ -128,7 +128,9 @@ class Dont < Module
     end
   end
 
-  register_handler(:exception, -> (deprecation) {
-    fail Dont::DeprecationError, deprecation.message
-  })
+  register_handler(:exception, -> (deprecation) { fail Dont::DeprecationError, deprecation.message })
+  register_handler(:warn, -> (deprecation) { warn deprecation.message })
+
+  WithException = new(:exception)
+  WithWarn = new(:warn)
 end
