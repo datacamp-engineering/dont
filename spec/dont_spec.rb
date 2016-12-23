@@ -106,7 +106,7 @@ describe Dont do
 
     it "still executes the original method correctly" do
       Item.create!(name: "Usable item", usable: true)
-      expect(@method_calls).to eq(["Item#usable=", "Item#usable"])
+      expect(@method_calls).to include("Item#usable=")
       @method_calls.clear
       item = Item.last
       expect(item.usable).to eq(true)
