@@ -1,6 +1,5 @@
 require "dont/version"
 require "dry-container"
-require "dry-initializer"
 
 # Defines a `dont_use` method which can be used to deprecate methods.  Whenever
 # the deprecated method is used the specified handler will get triggered.
@@ -108,11 +107,13 @@ class Dont < Module
 
   # Contains info about the deprecated method being called
   class Deprecation
-    extend Dry::Initializer::Mixin
+    attr_reader :subject, :old_method, :new_method
 
-    option :subject
-    option :new_method
-    option :old_method, optional: true
+    def initialize(subject:, old_method:, new_method: nil)
+      @subject = subject
+      @new_method = new_method
+      @old_method = old_method
+    end
 
     # A message saying that the old_method is deprecated. It also mentions the
     # new_method if provided.
